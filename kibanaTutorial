@@ -1,0 +1,311 @@
+# List indicies
+GET /_cat/indices?v
+
+# Create index
+PUT /customer?pretty
+
+# Put sample record
+PUT /customer/_doc/1?pretty
+{
+  "name": "John Doe"
+}
+
+# modify
+PUT /customer/_doc/1?pretty
+{
+  "name": "John Modified"
+}
+
+GET /customer/_doc/1
+
+# upd & add field
+POST /customer/_doc/1/_update?pretty
+{
+  "doc": { "name": "Jane Doe", "age": 20 }
+}
+
+# upd with script
+POST /customer/_doc/1/_update?pretty
+{
+  "script" : "ctx._source.age += 5"
+}
+
+DELETE /customer/_doc/2?pretty
+
+# delete index
+DELETE /customer?pretty
+
+# Bulk insert
+POST /customer/_doc/_bulk?pretty
+{"index":{"_id":"1"}}
+{"name": "John Doe" }
+{"index":{"_id":"2"}}
+{"name": "Jane Doe" }
+
+# Bulk multiple operations (for delete only ID required)
+# It won't fail if one of the operations fails
+POST /customer/_doc/_bulk?pretty
+{"update":{"_id":"1"}}
+{"doc": { "name": "John Doe becomes Jane Doe" } }
+{"delete":{"_id":"2"}}
+
+# FIRST PART END
+
+# START SECOND PART
+
+# Don't forget to insert samples
+GET /bank/_search?q=*&sort=account_number:asc&pretty
+
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "sort": [
+    { "account_number": "asc" }
+  ]
+}
+
+GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "size": 1
+}
+
+GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "from": 10,
+  "size": 10
+}
+
+GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "sort": { "balance": { "order": "desc" } }
+}
+
+# get 2 fields
+GET /bank/_search
+{
+  "query": { "match_all": {} },
+  "_source": ["account_number", "balance"]
+}
+
+GET /bank/_search
+{
+  "query": { "match": { "account_number": 20 } }
+}
+
+GET /bank/_search
+{
+  "query": { "match": { "address": "mill" } }
+}
+
+# that contains mill or lane
+GET /bank/_search
+{
+  "query": { "match": { "address": "mill lane" } }
+}
+
+# mill and lane
+GET /bank/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+
+# mill or lane
+GET /bank/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+
+# neither mir nor lane
+GET /bank/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+
+# all accounts of anybody who is 40 years old but doesn’t live in ID(aho):
+GET /bank/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "age": "40" } }
+      ],
+      "must_not": [
+        { "match": { "state": "ID" } }
+      ]
+    }
+  }
+}
+
+GET /bank/_search
+{
+  "query": { "match_phrase": { "address": "mill lane" } }
+}
+
+# filter
+GET /bank/_search
+{
+  "query": {
+    "bool": {
+      "must": { "match_all": {} },
+      "filter": {
+        "range": {
+          "balance": {
+            "gte": 20000,
+            "lte": 30000
+          }
+        }
+      }
+    }
+  }
+}
+
+# group
+GET /bank/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}
+
+# group + avg
+GET /bank/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}
+
+# group + avg + sort
+GET /bank/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword",
+        "order": {
+          "average_balance": "desc"
+        }
+      },
+      "aggs": {
+        "average_balance": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  }
+}
+
+# ranges
+GET /bank/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_age": {
+      "range": {
+        "field": "age",
+        "ranges": [
+          {
+            "from": 20,
+            "to": 30
+          },
+          {
+            "from": 30,
+            "to": 40
+          },
+          {
+            "from": 40,
+            "to": 50
+          }
+        ]
+      },
+      "aggs": {
+        "group_by_gender": {
+          "terms": {
+            "field": "gender.keyword"
+          },
+          "aggs": {
+            "average_balance": {
+              "avg": {
+                "field": "balance"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# PART 2 END
+
+# SECTION 3 STRATS
+
+# Health
+GET /_cat/health?v
+
+# Nodes
+GET /_cat/nodes?v
+
+# Shards
+GET _cat/shards/bank
+
+
+
+
+
+
+
+
+
+
